@@ -1,0 +1,36 @@
+{
+  "name": "icu",
+  "version": "1.0.0",
+  "description": "Manage cam from web, telegram, motioneyes",
+  "main": "index.js",
+  "scripts": {
+    "test": "\"echo \\\"Error: no test specified\\\" && exit 1\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mr8lu373/icu.git"
+  },
+  "keywords": [
+    "cam",
+    "telegram",
+    "bot",
+    "motion",
+    "motioneye",
+    "webcam",
+    "usbcam",
+    "ipcam",
+    "detection"
+  ],
+  "author": "mr8lu373",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mr8lu373/icu/issues"
+  },
+  "homepage": "https://github.com/mr8lu373/icu#readme",
+  "dependencies": {
+    "httpdispatcher": "^1.0.0",
+    "moment": "^2.15.1",
+    "node-telegram-bot-api": "^0.23.3",
+    "request": "^2.75.0"
+  }
+}
