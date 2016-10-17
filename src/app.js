@@ -13,10 +13,14 @@ var token = config['telegram']['token'];
 var roots =  config['telegram']['root_credentials'];
 var motion_th = config['motion_th'].filter(function(value){return value.enabled});
 
-var working_dir = __dirname;
-var bot = HomeTelegramBot.start(token, roots, motion_th, {"working_dir": working_dir});
+config.working_dir = __dirname;
 
+var bot = HomeTelegramBot.start(token, roots, motion_th, null, config);
 
+var logdEvent = function(req, req){
+	console.log('req:',req);
+	return 'Ok bella per te!';
+}
 
 var logEndEvent = function(req, res){
 	
@@ -84,6 +88,7 @@ var shutDownEvent = function (req, res){
 // Configure and start http server
 console.log("Start server......");
 httpserver.manage('/end_event', logEndEvent);
+httpserver.manage('/event', logdEvent);
 // httpserver.manage('/add_video', logEvent);
 httpserver.manage('/motion', motionEvent);
 httpserver.manage('/shutdown', shutDownEvent);
