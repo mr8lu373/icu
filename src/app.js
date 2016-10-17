@@ -17,7 +17,7 @@ config.working_dir = __dirname;
 
 var bot = HomeTelegramBot.start(token, roots, motion_th, null, config);
 
-var logdEvent = function(req, req){
+var logdEvent = function(req, res){
 	console.log('req:',req);
 	return 'Ok bella per te!';
 }
