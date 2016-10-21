@@ -1,5 +1,6 @@
 var TelegramBot = require('node-telegram-bot-api');
 var request = require('request');
+var spawn = require("child_process").spawn;
 var fs = require('fs');
 var MAX_SEND_DATA = 10;
 var CamTelegramBot = function() {
@@ -11,7 +12,7 @@ var CamTelegramBot = function() {
 	var bot = null;
 	var _motion = null;
 	var _token = null;
-	var config = null;
+	var _config = null;
 	var _warning_disabled = {};
 	var handleEcho = _handleEcho;
 	var handleSnap = _handleSnap;
@@ -211,6 +212,30 @@ var CamTelegramBot = function() {
 		});
 	}
 
+    function download_snap(uri, filename, callback) {
+        request.head(uri, function(err, res, body) {
+            console.log('content-type:', res.headers['content-type']);
+            console.log('content-length:', res.headers['content-length']);
+            console.log("res", res);
+            request(uri).pipe(fs.createWriteStream(filename)).on('close', callback);
+        });
+    }
+
+    function _sendPhoto(img, item, chatId){
+        try {
+            if (fs.statSync(img).isFile()) {
+                bot.sendPhoto(chatId, img, {
+                    caption: item.name
+                });
+            } else {
+                console.log(new Date() + ' <handleSnap> ' + img + ' not found');
+            }
+        } catch (err) {
+            console.log(new Date() + ' <handleSnap> ' + img, err);
+            bot.sendMessage(chatId, 'No photo ' + img);
+        }
+    }
+
 	function _handleSnap(msg) {
 		console.log('------snap----------');
 		var chatId = msg.chat.id;
@@ -222,19 +247,15 @@ var CamTelegramBot = function() {
 		}
 
 		_motion.forEach(function(item) {
+
+			// get image from motioneye
+
 			var img = item.path + item.snap_file;
-			try {
-				if (fs.statSync(img).isFile()) {
-					bot.sendPhoto(chatId, img, {
-						caption: item.name
-					});
-				} else {
-					console.log(new Date() + ' <handleSnap> ' + img + ' not found');
-				}
-			} catch (err) {
-				console.log(new Date() + ' <handleSnap> ' + img, err);
-				bot.sendMessage(chatId, 'No photo ' + img);
-			}
+			item.current_image_file = img;
+			download_snap(item.current_image, img, function(){
+				_sendPhoto(img, item, chatId);
+			});
+
 
 			// fs.stat(img, function(err, stat) {
 			// 	if(err == null) {
@@ -254,7 +275,7 @@ var CamTelegramBot = function() {
 		if (option === 'off') {
 			service_action = 'stop';
 		}
-		var execution_script = config.working_dir + "/../script/motion_" + service_action + ".sh";
+		var execution_script = _config.working_dir + "/../script/motion_" + service_action + ".sh";
 		exec(execution_script,
 			function(error, stdout, stderr) {
 				console.log('stdout: ' + stdout);
@@ -268,7 +289,16 @@ var CamTelegramBot = function() {
 	function _handleSetdMail(msg, match) {
 		console.log(msg, match);
 		var option = match[0];
-		__setMailNotificationStatus__(option == 'on');
+		// __setMailNotificationStatus__(option == 'on');
+		// call python script
+		var python_call = '/Users/mrblue/Develop/domotica/nc200_script/action_cam.py';//_config.scripts.setMailNotificationStatus;
+		var process = spawn('python',[python_call, '-m', option]);
+		var output = "";
+		 process.stdout.on('data', function(data){ 
+
+		    output += data ;
+		    console.log(data);
+		});		
 	}
 
 	function __setMailNotificationStatus__(status) {
@@ -299,7 +329,7 @@ var CamTelegramBot = function() {
 		var _bot = new TelegramBot(_token, options);
 		_bot.onText(/\/echo (.*)/, handleEcho);
 		_bot.onText(/\/snap/, handleSnap);
-		_bot.onText(/\/video/, handleVideo);
+		_bot.onText(/\/video/, handleVideo);		
 		_bot.onText(/\/enable/, handleEnableWarning);
 		_bot.onText(/\/disable/, _handleDisableWarning);
 		_bot.onText(/\/mail_cam (on|off)/, _handleSetdMail);
@@ -311,7 +341,10 @@ var CamTelegramBot = function() {
 		_rootId = rootId;
 		_motion = motion;
 		_token = token;
-		console.log(config);
+		_config = config;
+
+		// console.log(_config.scripts.setMailNotificationStatus);
+		console.log('config:',_config);
 		_rootId.forEach(function(item) {
 			chats.push(item);
 		});
